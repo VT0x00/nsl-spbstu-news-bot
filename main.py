@@ -39,23 +39,26 @@ async def unknown(message: Message):
 
 
 async def send_news():
-    site_msgs, err = modules.make_message.mk_msg_site()
-    if err == "Обновлений нет":
-        print(err)
-        pass
-    elif err != None:
-        print(err)
-        await bot.send_message(ADMIN_ID, err)
-    else:
-        for site_msg in site_msgs:
-            await bot.send_message(CHANNEL_ID, site_msg)
-            await asyncio.sleep(10)
-            print(site_msg)
+    try:
+        site_msgs, err = modules.make_message.mk_msg_site()
+        if err == "Обновлений нет":
+            print(err)
+            pass
+        elif err != None:
+            print(err)
+            await bot.send_message(ADMIN_ID, err)
+        else:
+            for site_msg in site_msgs:
+                await bot.send_message(CHANNEL_ID, site_msg)
+                await asyncio.sleep(10)
+                print(site_msg)
+    except Exception as err:
+        await bot.send_message(ADMIN_ID, f"Аn error occurred:\n```\n{err}\n```")
 
 
 async def send_news_scheduler():
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(send_news, 'interval', seconds=60*60)
+    scheduler.add_job(send_news, 'interval', seconds=60*10) # TODO: CHANGE 60*10 to 60*60
     scheduler.start()
 
 
@@ -68,6 +71,8 @@ async def main():
         dp.include_router(start_router)
         await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(bot)
+    except Exception as err:
+        await bot.send_message(ADMIN_ID, f"Аn error occurred:\n```\n{err}\n```")
     finally:
         # pass
         await dp.storage.close()

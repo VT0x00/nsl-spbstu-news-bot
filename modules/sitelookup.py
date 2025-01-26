@@ -6,7 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 
 prev_new = {}
-prev_new_file_path = "./prev_new_backup.txt"
+prev_new_file_path = "/home/nsl-spbstu-news-bot/prev_new_backup.txt"
 
 def month_prettify(month: str) -> str:
     months = {
@@ -63,7 +63,7 @@ def lookup_for_updates() -> (list, str):
         last_news.append(news)
 
     with open(prev_new_file_path, 'r+') as prev_new_file:
-        prev_new_raw = prev_new_file.readline().split(';')
+        prev_new_raw = prev_new_file.readline().replace('\n', '').split(';')
         print(f"PREV_NEW_RAW: {prev_new_raw}")
         if prev_new_raw != ['']:
             prev_new = {
@@ -71,6 +71,8 @@ def lookup_for_updates() -> (list, str):
                 "title": prev_new_raw[1],
                 "link": prev_new_raw[2],
             }
+
+    print(f"{last_news=}")
 
     if prev_new:
         news = last_news[:last_news.index(prev_new):]
