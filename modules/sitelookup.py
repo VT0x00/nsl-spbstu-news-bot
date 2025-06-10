@@ -40,19 +40,19 @@ def lookup_for_updates() -> (list, str):
     soup = BeautifulSoup(req.text, 'html.parser')
     last_news = []
 
-    for new in soup.find_all('div', class_='news-item'):
+    for new in soup.find_all('div', class_='news-list-item__card'):
         news = {
             "date": "",
             "title": "",
             "link": "",
         }
 
-        tmp_day = new.find('div', class_='day').get_text()
+        tmp_day = new.find('div', class_='news-list-item__day').get_text()
         day = tmp_day if len(tmp_day) == 2 else "0" + tmp_day
-        month = month_prettify(new.find('div', class_='month').get_text())
-        year = soup.find('div', class_='year').get_text()
+        month = month_prettify(new.find('div', class_='news-list-item__month').get_text())
+        year = soup.find('div', class_='news-list-item__year').get_text()
 
-        title_raw = new.find('a', class_='title')
+        title_raw = new.find('a', class_='news-list-item__title')
         title = title_raw.get_text()
         link = title_raw.get('href')
 
