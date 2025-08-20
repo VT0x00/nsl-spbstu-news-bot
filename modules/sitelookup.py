@@ -1,12 +1,12 @@
-"""
-Lookup for updates on NSL SPBSTU website
-"""
-
 import requests
 from bs4 import BeautifulSoup
+import json
+from datetime import datetime
+import os
 
-prev_new = {}
-prev_new_file_path = "/home/nsl-spbstu-news-bot/prev_new_backup.txt"
+# Заменим путь к файлу для хранения истории
+history_file_path = "../news_history.json"
+# history_file_path = "/home/nsl-spbstu-news-bot/prev_new_backup.txt"
 
 def month_prettify(month: str) -> str:
     months = {
@@ -23,14 +23,24 @@ def month_prettify(month: str) -> str:
         "Ноя": "11",
         "Дек": "12",
     }
-
     return months[month]
 
+def load_history():
+    """Загружает историю новостей из файла"""
+    if os.path.exists(history_file_path):
+        try:
+            with open(history_file_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            return []
+    return []
 
-def lookup_for_updates() -> (list, str):
-    global prev_new
-    global prev_new_file_path
+def save_history(history):
+    """Сохраняет историю новостей в файл"""
+    with open(history_file_path, 'w', encoding='utf-8') as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
 
+def lookup_for_updates() -> tuple[list, str]:
     headers = {
         "Accept": "text/html",
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
@@ -38,60 +48,69 @@ def lookup_for_updates() -> (list, str):
 
     req = requests.get("https://nsl.spbstu.ru/news/", headers)
     soup = BeautifulSoup(req.text, 'html.parser')
-    last_news = []
+    current_news = []
 
+    # Парсим текущие новости
     for new in soup.find_all('div', class_='news-list-item__card'):
-        news = {
-            "date": "",
-            "title": "",
-            "link": "",
-        }
-
         tmp_day = new.find('div', class_='news-list-item__day').get_text()
         day = tmp_day if len(tmp_day) == 2 else "0" + tmp_day
         month = month_prettify(new.find('div', class_='news-list-item__month').get_text())
         year = soup.find('div', class_='news-list-item__year').get_text()
 
         title_raw = new.find('a', class_='news-list-item__title')
-        title = title_raw.get_text()
+        title = title_raw.get_text().strip()
         link = title_raw.get('href')
 
-        news['date'] = f"{day}.{month}.{year}"
-        news['title'] = title
-        news['link'] = link
+        news_item = {
+            "date": f"{day}.{month}.{year}",
+            "title": title,
+            "link": link,
+            "timestamp": datetime.now().isoformat()  # добавляем временную метку
+        }
+        current_news.append(news_item)
 
-        last_news.append(news)
-
-    with open(prev_new_file_path, 'r+') as prev_new_file:
-        prev_new_raw = prev_new_file.readline().replace('\n', '').split(';')
-        print(f"PREV_NEW_RAW: {prev_new_raw}")
-        if prev_new_raw != ['']:
-            prev_new = {
-                "date": prev_new_raw[0],
-                "title": prev_new_raw[1],
-                "link": prev_new_raw[2],
-            }
-
-    print(f"{last_news=}")
-
-    if prev_new:
-        news = last_news[:last_news.index(prev_new):]
-    else:
-        news = last_news
-
-    if len(news) == 0:
+    # Загружаем историю
+    history = load_history()
+    
+    # Находим новые новости (те, которых нет в истории)
+    new_news = []
+    seen_links = set(item['link'] for item in history)
+    
+    for news_item in current_news:
+        if news_item['link'] not in seen_links:
+            new_news.append(news_item)
+            # Прерываем поиск при первом совпадении (старой новости)
+            # Но сначала добавляем все новые до первой старой
+        else:
+            # Нашли первую старую новость - прерываем
+            break
+    
+    # Проверяем на ошибки
+    for item in new_news:
+        if item['date'] == '' or item['title'] == '' or item['link'] == '':
+            return [], f"Возникла ошибка при получении данных\n```{item=}```"
+    
+    # Обновляем историю (добавляем новые новости в начало)
+    if new_news:
+        # Добавляем только уникальные новости
+        updated_history = new_news + history
+        # Ограничиваем размер истории (например, последние 100 новостей)
+        updated_history = updated_history[:100]
+        save_history(updated_history)
+    
+    print(f"Найдено новых новостей: {len(new_news)}")
+    
+    if not new_news:
         return [], "Обновлений нет"
+    
+    return list(reversed(new_news)), ""
 
-    for i in news:
-        if i['date'] == '' or i['title'] == '' or i['link'] == '':
-            return [], f"Возникла ошибка при получении данных\n```{i=}```"
+# Дополнительная функция для отладки
+def show_history():
+    """Показывает текущую историю новостей"""
+    history = load_history()
+    print(f"Всего в истории: {len(history)} новостей")
+    for i, item in enumerate(history[:5], 1):  # показываем первые 5
+        print(f"{i}. {item['date']} - {item['title']}")
 
-    print(news)
-
-    prev_new = news[0]
-
-    with open(prev_new_file_path, 'w+') as prev_new_file:
-        prev_new_file.write(';'.join(prev_new.values()))
-
-    return reversed(news), ""
-
+print(lookup_for_updates())

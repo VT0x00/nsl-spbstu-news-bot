@@ -11,7 +11,7 @@ ___
 """
 
 
-def mk_msg_site() -> (list, str|None):
+def mk_msg_site() -> tuple[list, str|None]:
     messages = []
 
     site_news, err = sitelookup.lookup_for_updates()
