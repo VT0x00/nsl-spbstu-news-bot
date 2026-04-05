@@ -4,3 +4,10 @@ services:
       context: .
       dockerfile: Dockerfile
     command: main.py
+    restart: always
+    volumes:
+      - data:/home/nsl-spbstu-news-bot/data
+
+volumes:
+  data:
+    

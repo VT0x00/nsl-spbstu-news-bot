@@ -54,6 +54,7 @@ async def send_news():
                 print(site_msg)
     except Exception as err:
         await bot.send_message(ADMIN_ID, f"Аn error occurred:\n```\n{err}\n```")
+        print(f"{CHANNEL_ID=}")
 
 
 async def send_news_scheduler():
@@ -66,15 +67,14 @@ async def main():
     try:
         loop = asyncio.get_event_loop()
         loop.create_task(send_news_scheduler())
-        # await send_news()
 
         dp.include_router(start_router)
         await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(bot)
     except Exception as err:
         await bot.send_message(ADMIN_ID, f"Аn error occurred:\n```\n{err}\n```")
+        print(f"ERROR MAIN: {err=}")
     finally:
-        # pass
         await dp.storage.close()
         await bot.session.close()
 

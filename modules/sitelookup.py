@@ -4,9 +4,7 @@ import json
 from datetime import datetime
 import os
 
-# Заменим путь к файлу для хранения истории
-history_file_path = "../news_history.json"
-# history_file_path = "/home/nsl-spbstu-news-bot/prev_new_backup.txt"
+history_file_path = "/home/nsl-spbstu-news-bot/data/news_history.json"
 
 def month_prettify(month: str) -> str:
     months = {
@@ -26,7 +24,6 @@ def month_prettify(month: str) -> str:
     return months[month]
 
 def load_history():
-    """Загружает историю новостей из файла"""
     if os.path.exists(history_file_path):
         try:
             with open(history_file_path, 'r', encoding='utf-8') as f:
@@ -36,7 +33,6 @@ def load_history():
     return []
 
 def save_history(history):
-    """Сохраняет историю новостей в файл"""
     with open(history_file_path, 'w', encoding='utf-8') as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
@@ -50,7 +46,6 @@ def lookup_for_updates() -> tuple[list, str]:
     soup = BeautifulSoup(req.text, 'html.parser')
     current_news = []
 
-    # Парсим текущие новости
     for new in soup.find_all('div', class_='news-list-item__card'):
         tmp_day = new.find('div', class_='news-list-item__day').get_text()
         day = tmp_day if len(tmp_day) == 2 else "0" + tmp_day
@@ -65,36 +60,27 @@ def lookup_for_updates() -> tuple[list, str]:
             "date": f"{day}.{month}.{year}",
             "title": title,
             "link": link,
-            "timestamp": datetime.now().isoformat()  # добавляем временную метку
+            "timestamp": datetime.now().isoformat()
         }
         current_news.append(news_item)
 
-    # Загружаем историю
     history = load_history()
     
-    # Находим новые новости (те, которых нет в истории)
     new_news = []
     seen_links = set(item['link'] for item in history)
     
     for news_item in current_news:
         if news_item['link'] not in seen_links:
             new_news.append(news_item)
-            # Прерываем поиск при первом совпадении (старой новости)
-            # Но сначала добавляем все новые до первой старой
         else:
-            # Нашли первую старую новость - прерываем
             break
     
-    # Проверяем на ошибки
     for item in new_news:
         if item['date'] == '' or item['title'] == '' or item['link'] == '':
             return [], f"Возникла ошибка при получении данных\n```{item=}```"
     
-    # Обновляем историю (добавляем новые новости в начало)
     if new_news:
-        # Добавляем только уникальные новости
         updated_history = new_news + history
-        # Ограничиваем размер истории (например, последние 100 новостей)
         updated_history = updated_history[:100]
         save_history(updated_history)
     
@@ -105,12 +91,9 @@ def lookup_for_updates() -> tuple[list, str]:
     
     return list(reversed(new_news)), ""
 
-# Дополнительная функция для отладки
 def show_history():
-    """Показывает текущую историю новостей"""
     history = load_history()
     print(f"Всего в истории: {len(history)} новостей")
     for i, item in enumerate(history[:5], 1):  # показываем первые 5
         print(f"{i}. {item['date']} - {item['title']}")
 
-print(lookup_for_updates())

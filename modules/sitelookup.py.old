@@ -6,8 +6,8 @@ import requests
 from bs4 import BeautifulSoup
 
 prev_new = {}
-# prev_new_file_path = "/home/nsl-spbstu-news-bot/prev_new_backup.txt"
-prev_new_file_path = "../prev_new_backup.txt"
+prev_new_file_path = "/home/nsl-spbstu-news-bot/prev_new_backup.txt"
+# prev_new_file_path = "../prev_new_backup.txt"
 
 def month_prettify(month: str) -> str:
     months = {
