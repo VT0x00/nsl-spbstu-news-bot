@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import json
 from datetime import datetime
 import os
+import time
 
 history_file_path = "/home/nsl-spbstu-news-bot/data/news_history.json"
 
@@ -47,6 +48,8 @@ def lookup_for_updates() -> tuple[list, str]:
     all_new_news = []
 
     for page in range(1, 50):
+        time.sleep(random.randrange(0.3, 2, 0.1))
+        
         if page == 1:
             url = "https://nsl.spbstu.ru/news/"
         else:
