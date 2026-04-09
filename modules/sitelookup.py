@@ -95,11 +95,6 @@ def lookup_for_updates() -> tuple[list, str]:
         if found_known:
             break
 
-        page += 1
-
-        if page > 50:
-            break
-
     for item in all_new_news:
         if item['date'] == '' or item['title'] == '' or item['link'] == '':
             return [], f"Возникла ошибка при получении данных\n```{item=}```"
