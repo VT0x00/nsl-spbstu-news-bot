@@ -46,7 +46,7 @@ def lookup_for_updates() -> tuple[list, str]:
     seen_links = set(item['link'] for item in history)
     all_new_news = []
 
-    for page in range(1, 44):
+    for page in range(1, 50):
         if page == 1:
             url = "https://nsl.spbstu.ru/news/"
         else:
